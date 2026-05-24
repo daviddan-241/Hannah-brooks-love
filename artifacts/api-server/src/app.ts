@@ -38,6 +38,15 @@ app.use("/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
 
+// ── Serve AI Persona Studio at /studio ───────────────────────────────────────
+const aiPersonaDist = path.resolve(process.cwd(), "..", "ai-persona", "dist", "public");
+if (fs.existsSync(aiPersonaDist)) {
+  app.use("/studio", express.static(aiPersonaDist, { index: "index.html" }));
+  app.get("/studio/{*path}", (_req, res) => {
+    res.sendFile(path.join(aiPersonaDist, "index.html"));
+  });
+}
+
 // ── Serve built frontend (single-port deployment) ────────────────────────────
 // In production, the built admin portal lives at ../hannah-brooks/dist/public
 const frontendDist = path.resolve(process.cwd(), "..", "hannah-brooks", "dist", "public");

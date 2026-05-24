@@ -4,6 +4,7 @@ import { giftCardsTable, vipMembersTable } from "@workspace/db";
 import { adminAuth } from "../middleware/admin";
 import { desc, eq } from "drizzle-orm";
 import { sendMail, emailAdminNewGiftCard, emailFanGiftCardReceived, emailFanGiftCardApproved, emailFanGiftCardRejected } from "../lib/mailer";
+import { sendPush } from "../lib/push";
 import { platformConfig } from "./settings";
 
 const router: IRouter = Router();
@@ -56,6 +57,8 @@ router.post("/gift-cards", async (req, res): Promise<void> => {
       const adminTpl = emailAdminNewGiftCard({ fanName, fanEmail, cardType, amount: cardAmount, purpose: purpose || "subscription" });
       sendMail({ to: adminEmail, subject: adminTpl.subject, html: adminTpl.html }).catch(() => {});
     }
+
+    sendPush(`💳 New Gift Card — ${fanName}`, `$${cardAmount} ${cardType} · ${purpose || "subscription"}`, { tag: "giftcard", url: "/admin" }).catch(() => {});
 
     res.status(201).json({ success: true, id: row.id, message: "Gift card received! Sophie Rain will verify and unlock your access within a few hours." });
   } catch (e: unknown) {

@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { db, postsTable } from "@workspace/db";
 import { adminAuth } from "../middleware/admin";
 import { activityEmitter } from "../emitter";
+import { sendPush } from "../lib/push";
 
 const router: IRouter = Router();
 
@@ -59,6 +60,8 @@ router.post("/posts", adminAuth, async (req, res): Promise<void> => {
     post: post as Record<string, unknown>,
     timestamp: new Date().toISOString(),
   });
+
+  sendPush("📸 New Post Published", `${row.caption?.slice(0, 80) || row.mediaType + " post"} · ${row.isPrivate ? "VIP only" : "Public"}`, { tag: "post", url: "/admin" }).catch(() => {});
 
   res.status(201).json(post);
 });

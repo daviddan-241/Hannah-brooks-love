@@ -4,6 +4,7 @@ import { db, tipsTable } from "@workspace/db";
 import { CreateTipBody } from "@workspace/api-zod";
 import { activityEmitter } from "../emitter";
 import { sendMail, emailFanTipReceived, emailAdminNewTip } from "../lib/mailer";
+import { sendPush } from "../lib/push";
 import { platformConfig } from "./settings";
 
 const router: IRouter = Router();
@@ -58,6 +59,8 @@ router.post("/tips", async (req, res): Promise<void> => {
     });
     sendMail({ to: adminEmail, subject: adminTpl.subject, html: adminTpl.html }).catch(() => {});
   }
+
+  sendPush(`💝 New Tip — ${parsed.data.fanName}`, `$${parsed.data.amount}${parsed.data.message ? ` · "${parsed.data.message.slice(0, 60)}"` : ""}`, { tag: "tip", url: "/admin" }).catch(() => {});
 
   res.status(201).json({ ...row, amount: Number(row.amount), createdAt: row.createdAt.toISOString() });
 });

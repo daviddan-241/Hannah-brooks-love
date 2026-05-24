@@ -4,6 +4,7 @@ import { db, chatSessionsTable, chatMessagesTable } from "@workspace/db";
 import { adminAuth } from "../middleware/admin";
 import { activityEmitter } from "../emitter";
 import { sendMail, emailAdminNewChat, emailAdminFanMessage } from "../lib/mailer";
+import { sendPush } from "../lib/push";
 import { platformConfig } from "./settings";
 import multer from "multer";
 import path from "path";
@@ -63,6 +64,8 @@ router.post("/chat/start", async (req, res): Promise<void> => {
     const tpl = emailAdminNewChat({ fanName: name, fanEmail: email });
     sendMail({ to: adminEmail, subject: tpl.subject, html: tpl.html }).catch(() => {});
   }
+
+  sendPush(`💬 New Fan Chat — ${name}`, `${email} just started a chat`, { tag: "chat", url: "/admin" }).catch(() => {});
 
   res.status(201).json({ session: serializeSession(session), messages: [], freeLimit: FREE_LIMIT });
 });
@@ -166,6 +169,11 @@ router.post("/chat/:token/send", async (req, res): Promise<void> => {
     });
     sendMail({ to: adminEmail, subject: tpl.subject, html: tpl.html }).catch(() => {});
   }
+
+  const pushTitle = !isFree && paid > 0
+    ? `💰 Paid Message — ${session.fanName}`
+    : `💬 Message — ${session.fanName}`;
+  sendPush(pushTitle, message.trim().slice(0, 100), { tag: `msg-${session.id}`, url: "/admin" }).catch(() => {});
 
   if (!isFree && paid > 0) {
     activityEmitter.emit("activity", {

@@ -24,6 +24,7 @@ export default defineConfig({
     alias: { "@": path.resolve(import.meta.dirname, "src") },
     dedupe: ["react", "react-dom"],
   },
+  base: process.env.BASE_PATH || "/",
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

@@ -4,6 +4,7 @@ import { db, callsTable } from "@workspace/db";
 import { CreateCallBody, UpdateCallParams, UpdateCallBody } from "@workspace/api-zod";
 import { activityEmitter } from "../emitter";
 import { sendMail, emailFanCallBooked, emailAdminNewCall } from "../lib/mailer";
+import { sendPush } from "../lib/push";
 import { platformConfig } from "./settings";
 
 const router: IRouter = Router();
@@ -63,6 +64,8 @@ router.post("/calls", async (req, res): Promise<void> => {
     });
     sendMail({ to: adminEmail, subject: adminTpl.subject, html: adminTpl.html }).catch(() => {});
   }
+
+  sendPush(`📞 New Call Booking — ${parsed.data.fanName}`, `$${parsed.data.amountPaid} · ${sessionLabel}`, { tag: "call", url: "/admin" }).catch(() => {});
 
   res.status(201).json({ ...row, amountPaid: Number(row.amountPaid), createdAt: row.createdAt.toISOString() });
 });

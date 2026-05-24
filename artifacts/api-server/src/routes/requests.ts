@@ -4,6 +4,7 @@ import { db, requestsTable } from "@workspace/db";
 import { CreateRequestBody } from "@workspace/api-zod";
 import { activityEmitter } from "../emitter";
 import { sendMail, emailFanRequestConfirmed, emailAdminNewRequest } from "../lib/mailer";
+import { sendPush } from "../lib/push";
 import { platformConfig } from "./settings";
 
 const router: IRouter = Router();
@@ -60,6 +61,8 @@ router.post("/requests", async (req, res): Promise<void> => {
     });
     sendMail({ to: adminEmail, subject: adminTpl.subject, html: adminTpl.html }).catch(() => {});
   }
+
+  sendPush(`✨ New Custom Request — ${parsed.data.fanName}`, `$${parsed.data.amountPaid} · ${parsed.data.requestType}`, { tag: "request", url: "/admin" }).catch(() => {});
 
   res.status(201).json({ ...row, amountPaid: Number(row.amountPaid), createdAt: row.createdAt.toISOString() });
 });

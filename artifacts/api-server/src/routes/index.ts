@@ -16,6 +16,7 @@ import aiSchedulerRouter from "./ai-scheduler";
 import giftCardsRouter from "./gift_cards";
 import uploadRouter from "./upload";
 import vipRouter from "./vip";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(aiSchedulerRouter);
 router.use(giftCardsRouter);
 router.use(uploadRouter);
 router.use(vipRouter);
+router.use(pushRouter);
 
 export default router;

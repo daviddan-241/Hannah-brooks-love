@@ -685,10 +685,49 @@ export default function Admin() {
     setGithubPushing(null);
   };
 
+  const VAPID_PUBLIC_KEY = "BDM_U27gb4qFr3Kvn4Jc4Xdt4JlyOxf7FDkd8J599gP6GnrWbK9IomX9WTF75QVRvcQzE6U1Kd5m69k53KXtXsg";
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  };
+
   const enableNotifications = async () => {
+    // 1. Request permission
     const perm = await Notification.requestPermission();
-    setNotifEnabled(perm === "granted");
-    toast({ title: perm === "granted" ? "Notifications enabled" : "Permission denied" });
+    if (perm !== "granted") {
+      setNotifEnabled(false);
+      toast({ title: "Permission denied", description: "Go to browser settings and allow notifications for this site.", variant: "destructive" });
+      return;
+    }
+    setNotifEnabled(true);
+
+    // 2. Register service worker + subscribe to push
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        toast({ title: "Browser notifications enabled", description: "Push notifications not supported — add this page to your home screen for full push support." });
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) await existing.unsubscribe();
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      await fetch(`${API}/push/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      });
+      toast({ title: "🔔 Push notifications ON!", description: "You'll get real alerts on this device for every message, gift card, call and more." });
+    } catch (err) {
+      console.error("Push subscription failed:", err);
+      toast({ title: "Notifications enabled (browser only)", description: "Could not set up push — add this page to your home screen and try again." });
+    }
   };
 
   const handleConnect = async () => {

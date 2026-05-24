@@ -416,7 +416,7 @@ router.post("/social/github/push", adminAuth, async (req, res): Promise<void> =>
   const { promisify } = await import("util");
   const execAsync = promisify(exec);
 
-  const target = ((req.body as { target?: string }).target) || "public";
+  const target = (req.body && (req.body as { target?: string }).target) || "public";
   const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN || "";
 
   if (!token) {
